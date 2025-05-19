@@ -3,34 +3,6 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Soundtrack Generative Gadget</title>
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      overflow: hidden;
-      background-color: black;
-    }
-    iframe {
-      border: none;
-      width: 100%;
-      height: 100%;
-    }
-  </style>
-</head>
-<body>
-  <iframe src="https://my.spline.design/soundtrackgenerativeoptimized-MW4JlGcBXIeAG62k0dkgglAp/" allowfullscreen></iframe>
-</body>
-</html>
-Ось оптимізований HTML-код для вашого синтезатора з інтеграцією важеля ON/OFF та аудіо-логікою:
-
-html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Soundtrack Generative</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
   <style>
@@ -42,7 +14,7 @@ html
       background-color: #000;
       font-family: Arial, sans-serif;
     }
-    #container {
+    #spline-container {
       position: relative;
       width: 100%;
       height: 100%;
@@ -51,9 +23,6 @@ html
       border: none;
       width: 100%;
       height: 100%;
-      position: absolute;
-      top: 0;
-      left: 0;
     }
     #power-control {
       position: absolute;
@@ -99,100 +68,116 @@ html
       filter: brightness(0.5);
       pointer-events: none;
     }
+    #update-status {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      color: #aaa;
+      font-size: 12px;
+      z-index: 1000;
+    }
   </style>
 </head>
 <body>
-  <div id="container">
-    <!-- Spline сцена -->
-    <iframe id="spline-scene" src="https://my.spline.design/soundtrackgenerativeoptimized-MW4JlGcBXIeAG62k0dkgglAp/" allowfullscreen></iframe>
+  <div id="spline-container">
+    <iframe id="spline-scene" src="https://my.spline.design/soundtrackgenerativeoptimized-MW4JlGcBXIeAG62k0dkgglAp/?v=1" allowfullscreen></iframe>
     
-    <!-- Контроль живлення -->
     <div id="power-control">
       <div id="power-btn"></div>
       <div id="power-status">OFF</div>
     </div>
+    
+    <div id="update-status">Last checked: <span id="last-checked">Just now</span></div>
   </div>
 
   <script>
-    // Глобальні змінні
-    let powerState = false;
-    const audioElements = [];
+    // Audio system state
+    let isPoweredOn = false;
+    const activeSynths = [];
+    let currentVersion = 1;
+    const checkInterval = 30000; // 30 seconds
     
-    // Ініціалізація аудіо
-    function initAudioSystem() {
-      // Ініціалізація Tone.js
-      Tone.start();
-      
-      // Приклад створення аудіо-елементів
-      const noiseSynth = new Tone.NoiseSynth({
-        noise: { type: 'pink' },
-        envelope: { attack: 0.1, decay: 0.2, sustain: 0.5, release: 0.8 },
-        volume: -20
-      }).toDestination();
-      
-      audioElements.push(noiseSynth);
-      
-      console.log("Audio system ready");
+    // Initialize audio context
+    async function initAudio() {
+      await Tone.start();
+      console.log("Audio ready");
     }
     
-    // Зупинка всіх звуків
-    function stopAllSounds() {
-      Tone.Transport.stop();
-      audioElements.forEach(element => {
-        if (element.triggerRelease) element.triggerRelease();
-        if (element.stop) element.stop();
-      });
-    }
-    
-    // Обробник кнопки живлення
+    // Power control handler
     document.getElementById('power-btn').addEventListener('click', async () => {
-      powerState = !powerState;
-      updatePowerState();
+      isPoweredOn = !isPoweredOn;
+      updatePowerUI();
       
-      if (powerState) {
-        // Увімкнення
-        await initAudioSystem();
+      if (isPoweredOn) {
+        await initAudio();
         document.getElementById('spline-scene').classList.remove('power-off');
       } else {
-        // Вимкнення
         stopAllSounds();
         document.getElementById('spline-scene').classList.add('power-off');
       }
     });
     
-    // Оновлення стану
-    function updatePowerState() {
+    // Update power switch UI
+    function updatePowerUI() {
       const btn = document.getElementById('power-btn');
       const status = document.getElementById('power-status');
       
-      btn.classList.toggle('on', powerState);
-      status.textContent = powerState ? 'ON' : 'OFF';
+      btn.classList.toggle('on', isPoweredOn);
+      status.textContent = isPoweredOn ? 'ON' : 'OFF';
     }
     
-    // Для iOS (обов'язково)
+    // Stop all playing sounds
+    function stopAllSounds() {
+      Tone.Transport.stop();
+      activeSynths.forEach(synth => {
+        if (synth.triggerRelease) synth.triggerRelease();
+      });
+      activeSynths.length = 0;
+    }
+    
+    // Check for Spline updates
+    function checkForUpdates() {
+      const timestamp = new Date().toLocaleTimeString();
+      document.getElementById('last-checked').textContent = timestamp;
+      
+      fetch(`https://my.spline.design/soundtrackgenerativeoptimized-MW4JlGcBXIeAG62k0dkgglAp/?v=${currentVersion}&check=1`, {
+        method: 'HEAD',
+        cache: 'no-store'
+      })
+      .then(response => {
+        if (response.status === 200) {
+          const newVersion = currentVersion + 1;
+          console.log(`Update detected! Reloading to version ${newVersion}`);
+          currentVersion = newVersion;
+          reloadSplineScene();
+        }
+      })
+      .catch(error => console.log("Update check failed:", error));
+    }
+    
+    // Reload Spline iframe
+    function reloadSplineScene() {
+      const iframe = document.getElementById('spline-scene');
+      iframe.src = iframe.src.split('?')[0] + `?v=${currentVersion}&t=${Date.now()}`;
+      
+      // Show update notification
+      const status = document.getElementById('last-checked');
+      status.textContent = "Updating now...";
+      setTimeout(() => {
+        status.textContent = new Date().toLocaleTimeString();
+      }, 2000);
+    }
+    
+    // iOS audio activation
     document.addEventListener('touchstart', () => {
       if (Tone.context.state !== 'running') Tone.start();
     }, { once: true });
     
-    // Комунікація з Spline сценою
-    window.addEventListener('message', (event) => {
-      if (event.data.type === 'splineEvent' && powerState) {
-        // Обробка подій з Spline (наприклад, натискання кнопок)
-        handleSplineEvent(event.data);
-      }
-    });
+    // Start update checker
+    setInterval(checkForUpdates, checkInterval);
     
-    function handleSplineEvent(eventData) {
-      // Тут обробляйте конкретні події з вашої сцени Spline
-      console.log("Spline event:", eventData);
-      
-      // Приклад: відтворення звуку при натисканні кнопки
-      if (eventData.target === 'sound-button') {
-        const synth = new Tone.Synth().toDestination();
-        synth.triggerAttackRelease("C4", "8n");
-        audioElements.push(synth);
-      }
-    }
+    // Initial check
+    checkForUpdates();
   </script>
 </body>
 </html>
