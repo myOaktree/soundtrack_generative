@@ -1,178 +1,208 @@
-<!DOCTYPE html>
-<html lang="uk">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Генеративний Саундтрек</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/recordrtc@5.6.2/RecordRTC.min.js"></script>
-  <style>
-    /* Стилі залишаються незмінними */
-    #controls {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      z-index: 1000;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
+< !DOCTYPE html >
+ < html lang = "en" >
+  < head >
+  
+    < meta charset = "UTF-8" />
+   
+     < meta name = "viewport" content = "width=device-width, initial-scale=1.0" />
+      
+        < title > Soundtrack Generative </ title >
+         
+           < script src = "https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js" ></ script >
+          
+            < style >
+              html, body
+{
+margin: 0;
+padding: 0;
+height: 100 %;
+overflow: hidden;
+    background - color: #000;
+      font - family: Arial, sans - serif;
+}
+# spline-container {
+position: relative;
+width: 100 %;
+height: 100 %;
     }
-    .control-btn {
+    iframe
+{
+border: none;
+width: 100 %;
+height: 100 %;
+}
+# power-control {
+position: absolute;
+top: 20px;
+right: 20px;
+z - index: 1000;
+display: flex;
+align - items: center;
+gap: 10px;
+    }
+    #power-btn {
       width: 60px;
-      height: 30px;
-      background: #555;
-      border-radius: 15px;
-      cursor: pointer;
-      position: relative;
+height: 30px;
+background: #555;
+      border - radius: 15px;
+cursor: pointer;
+position: relative;
+transition: background 0.3s;
+    }
+    #power-btn::after {
+      content: '';
+position: absolute;
+width: 26px;
+height: 26px;
+background: #fff;
+      border - radius: 50 %;
+top: 2px;
+left: 2px;
+transition: transform 0.3s;
+    }
+    #power-btn.on {
+      background: #4CAF50;
+    }
+    #power-btn.on::after {
+      transform: translateX(30px);
+    }
+    #power-status {
       color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      transition: all 0.3s;
+text - shadow: 0 0 5px #000;
+      font-size: 18px;
     }
-    #power-btn.on { background: #4CAF50; }
-    #record-btn.recording { 
-      background: #f44336; 
-      animation: pulse 1.5s infinite; 
+    .power - off {
+filter: brightness(0.5);
+    pointer - events: none;
+}
+# update-status {
+position: absolute;
+bottom: 10px;
+right: 10px;
+color: #aaa;
+      font - size: 12px;
+z - index: 1000;
     }
-    #stop-btn { background: #2196F3; }
-    @keyframes pulse {
-      0% { opacity: 1; }
-      50% { opacity: 0.7; }
-      100% { opacity: 1; }
-    }
-    #status {
-      color: white;
-      font-size: 14px;
-      text-shadow: 1px 1px 2px black;
-    }
-  </style>
-</head>
-<body>
-  <div id="spline-container">
-    <!-- Ваша сцена Spline -->
-    <iframe id="spline-scene" src="https://my.spline.design/soundtrackgenerativeoptimized-MW4JlGcBXIeAG62k0dkgglAp/"></iframe>
-    
-    <!-- Панель керування -->
-    <div id="controls">
-      <div id="power-btn" class="control-btn">ЖИВЛЕННЯ</div>
-      <div id="record-btn" class="control-btn">ЗАПИС</div>
-      <div id="stop-btn" class="control-btn">СТОП/ГРАТИ</div>
-      <div id="status">Статус: Готовий</div>
-    </div>
-  </div>
-
-  <script>
-    // Аудіо система
-    let isPoweredOn = false;
-    let isRecording = false;
-    let recorder;
-    const activeTracks = [];
-    const trackPresets = [];
-
-    // Ініціалізація аудіо
-    async function initAudio() {
-      await Tone.start();
-      console.log("Аудіо система готова");
-    }
-
-    // Функція для відтворення звуку
-    window.playSound = (frequency, duration, type = "synth") => {
-      if (!isPoweredOn) return null;
+  </ style >
+</ head >
+< body >
+  < div id = "spline-container" >
+ 
+     < iframe id = "spline-scene" src = "https://my.spline.design/soundtrackgenerativeoptimized-MW4JlGcBXIeAG62k0dkgglAp/?v=1" allowfullscreen ></ iframe >
       
-      let sound;
-      switch(type) {
-        case "nature":
-          sound = new Tone.Player("sounds/nature.mp3").toDestination();
-          break;
-        case "beat":
-          sound = new Tone.MembraneSynth().toDestination();
-          break;
-        default:
-          sound = new Tone.Synth().toDestination();
-      }
-      
-      sound.triggerAttackRelease(frequency, duration);
-      activeTracks.push(sound);
-      return sound;
-    };
 
-    // Кнопка живлення
-    document.getElementById('power-btn').addEventListener('click', async () => {
-      isPoweredOn = !isPoweredOn;
-      document.getElementById('power-btn').classList.toggle('on', isPoweredOn);
-      
-      if (isPoweredOn) {
+          < div id = "power-control" >
+       
+             < div id = "power-btn" ></ div >
+        
+              < div id = "power-status" > OFF </ div >
+         
+             </ div >
+         
+
+             < div id = "update-status" > Last checked: < span id = "last-checked" > Just now </ span ></ div >
+                   
+                     </ div >
+                   
+
+                     < script >
+                       // Audio system state
+                       let isPoweredOn = false;
+const activeSynths = [];
+let currentVersion = 1;
+const checkInterval = 30000; // 30 seconds
+
+// Initialize audio context
+async function initAudio()
+{
+    await Tone.start();
+    console.log("Audio ready");
+}
+
+// Power control handler
+document.getElementById('power-btn').addEventListener('click', async () => {
+    isPoweredOn = !isPoweredOn;
+    updatePowerUI();
+
+    if (isPoweredOn)
+    {
         await initAudio();
-        document.getElementById('status').textContent = "Статус: Увімкнено";
-      } else {
-        stopAllSounds();
-        document.getElementById('status').textContent = "Статус: Вимкнено";
-      }
-    });
-
-    // Зупинка всіх звуків
-    function stopAllSounds() {
-      Tone.Transport.stop();
-      activeTracks.forEach(track => {
-        track.stop?.();
-        track.triggerRelease?.();
-      });
-      activeTracks.length = 0;
+        document.getElementById('spline-scene').classList.remove('power-off');
     }
+    else
+    {
+        stopAllSounds();
+        document.getElementById('spline-scene').classList.add('power-off');
+    }
+});
 
-    // Запис треку
-    document.getElementById('record-btn').addEventListener('click', async () => {
-      if (!isPoweredOn) return;
-      
-      if (!isRecording) {
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          recorder = new RecordRTC(stream, {
-            type: 'audio',
-            mimeType: 'audio/wav',
-            recorderType: RecordRTC.StereoAudioRecorder
-          });
-          recorder.startRecording();
-          isRecording = true;
-          document.getElementById('record-btn').classList.add('recording');
-          document.getElementById('status').textContent = "Статус: Запис...";
-        } catch (error) {
-          console.error("Помилка запису:", error);
+// Update power switch UI
+function updatePowerUI()
+{
+    const btn = document.getElementById('power-btn');
+    const status = document.getElementById('power-status');
+
+    btn.classList.toggle('on', isPoweredOn);
+    status.textContent = isPoweredOn ? 'ON' : 'OFF';
+}
+
+// Stop all playing sounds
+function stopAllSounds()
+{
+    Tone.Transport.stop();
+    activeSynths.forEach(synth => {
+        if (synth.triggerRelease) synth.triggerRelease();
+    });
+    activeSynths.length = 0;
+}
+
+// Check for Spline updates
+function checkForUpdates()
+{
+    const timestamp = new Date().toLocaleTimeString();
+    document.getElementById('last-checked').textContent = timestamp;
+
+    fetch(`https://my.spline.design/soundtrackgenerativeoptimized-MW4JlGcBXIeAG62k0dkgglAp/?v=${currentVersion}&check=1`, {
+      method: 'HEAD',
+        cache: 'no-store'
+                    })
+      .then(response => {
+       if (response.status === 200)
+       {
+           const newVersion = currentVersion + 1;
+           console.log(`Update detected! Reloading to version ${ newVersion}`);
+currentVersion = newVersion;
+reloadSplineScene();
         }
-      } else {
-        recorder.stopRecording(() => {
-          const blob = recorder.getBlob();
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `генеративний-трек-${new Date().toISOString()}.wav`;
-          a.click();
-          isRecording = false;
-          document.getElementById('record-btn').classList.remove('recording');
-          document.getElementById('status').textContent = "Статус: Запис збережено";
-        });
-      }
-    });
+      })
+      .catch (error => console.log("Update check failed:", error));
+}
 
-    // Кнопка STOP/PLAY
-    document.getElementById('stop-btn').addEventListener('click', () => {
-      if (!isPoweredOn) return;
-      
-      if (Tone.Transport.state === "started") {
-        Tone.Transport.pause();
-        document.getElementById('status').textContent = "Статус: Пауза";
-      } else {
-        Tone.Transport.start();
-        document.getElementById('status').textContent = "Статус: Відтворення";
-      }
-    });
+// Reload Spline iframe
+function reloadSplineScene()
+{
+    const iframe = document.getElementById('spline-scene');
+    iframe.src = iframe.src.split('?')[0] + `?v =${ currentVersion}
+    &t =${ Date.now()}`;
 
-    // Для iOS
-    document.addEventListener('touchstart', () => {
-      if (Tone.context.state !== 'running') Tone.start();
-    }, { once: true });
-  </script>
-</body>
-</html>
+    // Show update notification
+    const status = document.getElementById('last-checked');
+    status.textContent = "Updating now...";
+    setTimeout(() => {
+        status.textContent = new Date().toLocaleTimeString();
+    }, 2000);
+}
+
+// iOS audio activation
+document.addEventListener('touchstart', () => {
+    if (Tone.context.state !== 'running') Tone.start();
+}, { once: true });
+
+// Start update checker
+setInterval(checkForUpdates, checkInterval);
+
+// Initial check
+checkForUpdates();
+  </ script >
+</ body >
+</ html >
