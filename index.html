@@ -1,64 +1,57 @@
-< !DOCTYPE html >
- < html lang = "en" >
-  < head >
-  
-    < meta charset = "UTF-8" />
-   
-     < meta name = "viewport" content = "width=device-width, initial-scale=1.0" />
-      
-        < title > Soundtrack Generative </ title >
-         
-           < script src = "https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js" ></ script >
-          
-            < style >
-              html, body
-{
-margin: 0;
-padding: 0;
-height: 100 %;
-overflow: hidden;
-    background - color: #000;
-      font - family: Arial, sans - serif;
-}
-# spline-container {
-position: relative;
-width: 100 %;
-height: 100 %;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Soundtrack Generative</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+      background-color: #000;
+      font-family: Arial, sans-serif;
     }
-    iframe
-{
-border: none;
-width: 100 %;
-height: 100 %;
-}
-# power-control {
-position: absolute;
-top: 20px;
-right: 20px;
-z - index: 1000;
-display: flex;
-align - items: center;
-gap: 10px;
+    #spline-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+    iframe {
+      border: none;
+      width: 100%;
+      height: 100%;
+    }
+    #power-control {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
     #power-btn {
       width: 60px;
-height: 30px;
-background: #555;
-      border - radius: 15px;
-cursor: pointer;
-position: relative;
-transition: background 0.3s;
+      height: 30px;
+      background: #555;
+      border-radius: 15px;
+      cursor: pointer;
+      position: relative;
+      transition: background 0.3s;
     }
     #power-btn::after {
       content: '';
-position: absolute;
-width: 26px;
-height: 26px;
-background: #fff;
-      border - radius: 50 %;
-top: 2px;
-left: 2px;
-transition: transform 0.3s;
+      position: absolute;
+      width: 26px;
+      height: 26px;
+      background: #fff;
+      border-radius: 50%;
+      top: 2px;
+      left: 2px;
+      transition: transform 0.3s;
     }
     #power-btn.on {
       background: #4CAF50;
@@ -68,141 +61,123 @@ transition: transform 0.3s;
     }
     #power-status {
       color: white;
-text - shadow: 0 0 5px #000;
+      text-shadow: 0 0 5px #000;
       font-size: 18px;
     }
-    .power - off {
-filter: brightness(0.5);
-    pointer - events: none;
-}
-# update-status {
-position: absolute;
-bottom: 10px;
-right: 10px;
-color: #aaa;
-      font - size: 12px;
-z - index: 1000;
+    .power-off {
+      filter: brightness(0.5);
+      pointer-events: none;
     }
-  </ style >
-</ head >
-< body >
-  < div id = "spline-container" >
- 
-     < iframe id = "spline-scene" src = "https://my.spline.design/soundtrackgenerativeoptimized-MW4JlGcBXIeAG62k0dkgglAp/?v=1" allowfullscreen ></ iframe >
+    #update-status {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      color: #aaa;
+      font-size: 12px;
+      z-index: 1000;
+    }
+  </style>
+</head>
+<body>
+  <div id="spline-container">
+    <iframe id="spline-scene" src="https://my.spline.design/soundtrackgenerativeoptimized-MW4JlGcBXIeAG62k0dkgglAp/?v=1" allowfullscreen></iframe>
+    
+    <div id="power-control">
+      <div id="power-btn"></div>
+      <div id="power-status">OFF</div>
+    </div>
+    
+    <div id="update-status">Last checked: <span id="last-checked">Just now</span></div>
+  </div>
+
+  <script>
+    // Audio system state
+    let isPoweredOn = false;
+    const activeSynths = [];
+    let currentVersion = 1;
+    const checkInterval = 30000; // 30 seconds
+    
+    // Initialize audio context
+    async function initAudio() {
+      await Tone.start();
+      console.log("Audio ready");
+    }
+    
+    // Power control handler
+    document.getElementById('power-btn').addEventListener('click', async () => {
+      isPoweredOn = !isPoweredOn;
+      updatePowerUI();
       
-
-          < div id = "power-control" >
-       
-             < div id = "power-btn" ></ div >
-        
-              < div id = "power-status" > OFF </ div >
-         
-             </ div >
-         
-
-             < div id = "update-status" > Last checked: < span id = "last-checked" > Just now </ span ></ div >
-                   
-                     </ div >
-                   
-
-                     < script >
-                       // Audio system state
-                       let isPoweredOn = false;
-const activeSynths = [];
-let currentVersion = 1;
-const checkInterval = 30000; // 30 seconds
-
-// Initialize audio context
-async function initAudio()
-{
-    await Tone.start();
-    console.log("Audio ready");
-}
-
-// Power control handler
-document.getElementById('power-btn').addEventListener('click', async () => {
-    isPoweredOn = !isPoweredOn;
-    updatePowerUI();
-
-    if (isPoweredOn)
-    {
+      if (isPoweredOn) {
         await initAudio();
         document.getElementById('spline-scene').classList.remove('power-off');
-    }
-    else
-    {
+      } else {
         stopAllSounds();
         document.getElementById('spline-scene').classList.add('power-off');
-    }
-});
-
-// Update power switch UI
-function updatePowerUI()
-{
-    const btn = document.getElementById('power-btn');
-    const status = document.getElementById('power-status');
-
-    btn.classList.toggle('on', isPoweredOn);
-    status.textContent = isPoweredOn ? 'ON' : 'OFF';
-}
-
-// Stop all playing sounds
-function stopAllSounds()
-{
-    Tone.Transport.stop();
-    activeSynths.forEach(synth => {
-        if (synth.triggerRelease) synth.triggerRelease();
+      }
     });
-    activeSynths.length = 0;
-}
-
-// Check for Spline updates
-function checkForUpdates()
-{
-    const timestamp = new Date().toLocaleTimeString();
-    document.getElementById('last-checked').textContent = timestamp;
-
-    fetch(`https://my.spline.design/soundtrackgenerativeoptimized-MW4JlGcBXIeAG62k0dkgglAp/?v=${currentVersion}&check=1`, {
-      method: 'HEAD',
+    
+    // Update power switch UI
+    function updatePowerUI() {
+      const btn = document.getElementById('power-btn');
+      const status = document.getElementById('power-status');
+      
+      btn.classList.toggle('on', isPoweredOn);
+      status.textContent = isPoweredOn ? 'ON' : 'OFF';
+    }
+    
+    // Stop all playing sounds
+    function stopAllSounds() {
+      Tone.Transport.stop();
+      activeSynths.forEach(synth => {
+        if (synth.triggerRelease) synth.triggerRelease();
+      });
+      activeSynths.length = 0;
+    }
+    
+    // Check for Spline updates
+    function checkForUpdates() {
+      const timestamp = new Date().toLocaleTimeString();
+      document.getElementById('last-checked').textContent = timestamp;
+      
+      fetch(`https://my.spline.design/soundtrackgenerativeoptimized-MW4JlGcBXIeAG62k0dkgglAp/?v=${currentVersion}&check=1`, {
+        method: 'HEAD',
         cache: 'no-store'
-                    })
+      })
       .then(response => {
-       if (response.status === 200)
-       {
-           const newVersion = currentVersion + 1;
-           console.log(`Update detected! Reloading to version ${ newVersion}`);
-currentVersion = newVersion;
-reloadSplineScene();
+        if (response.status === 200) {
+          const newVersion = currentVersion + 1;
+          console.log(`Update detected! Reloading to version ${newVersion}`);
+          currentVersion = newVersion;
+          reloadSplineScene();
         }
       })
-      .catch (error => console.log("Update check failed:", error));
-}
-
-// Reload Spline iframe
-function reloadSplineScene()
-{
-    const iframe = document.getElementById('spline-scene');
-    iframe.src = iframe.src.split('?')[0] + `?v =${ currentVersion}
-    &t =${ Date.now()}`;
-
-    // Show update notification
-    const status = document.getElementById('last-checked');
-    status.textContent = "Updating now...";
-    setTimeout(() => {
+      .catch(error => console.log("Update check failed:", error));
+    }
+    
+    // Reload Spline iframe
+    function reloadSplineScene() {
+      const iframe = document.getElementById('spline-scene');
+      iframe.src = iframe.src.split('?')[0] + `?v=${currentVersion}&t=${Date.now()}`;
+      
+      // Show update notification
+      const status = document.getElementById('last-checked');
+      status.textContent = "Updating now...";
+      setTimeout(() => {
         status.textContent = new Date().toLocaleTimeString();
-    }, 2000);
-}
-
-// iOS audio activation
-document.addEventListener('touchstart', () => {
-    if (Tone.context.state !== 'running') Tone.start();
-}, { once: true });
-
-// Start update checker
-setInterval(checkForUpdates, checkInterval);
-
-// Initial check
-checkForUpdates();
-  </ script >
-</ body >
-</ html >
+      }, 2000);
+    }
+    
+    // iOS audio activation
+    document.addEventListener('touchstart', () => {
+      if (Tone.context.state !== 'running') Tone.start();
+    }, { once: true });
+    
+    // Start update checker
+    setInterval(checkForUpdates, checkInterval);
+    
+    // Initial check
+    checkForUpdates();
+  </script>
+</body>
+</html>
