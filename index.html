@@ -192,39 +192,7 @@ function reloadSplineScene()
         status.textContent = new Date().toLocaleTimeString();
     }, 2000);
 }
-// Запис треку
-document.getElementById('record-btn').addEventListener('click', async () => {
-if (!isPoweredOn) return;
 
-if (!isRecording)
-{
-    // Початок запису
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-recorder = new RecordRTC(stream, {
-          type: 'audio',
-          mimeType: 'audio/wav',
-          recorderType: RecordRTC.StereoAudioRecorder
-        });
-recorder.startRecording();
-isRecording = true;
-document.getElementById('record-btn').classList.add('recording');
-document.getElementById('status').textContent = "Status: Recording...";
-      } else
-{
-    // Зупинка запису
-    recorder.stopRecording(() => {
-        const blob = recorder.getBlob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'generated-track.wav';
-        a.click();
-        isRecording = false;
-        document.getElementById('record-btn').classList.remove('recording');
-        document.getElementById('status').textContent = "Status: Recording saved";
-    });
-}
-    });
 // iOS audio activation
 document.addEventListener('touchstart', () => {
     if (Tone.context.state !== 'running') Tone.start();
